@@ -1,26 +1,99 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>8 Puzzle BFS</title>
+    <title>8 Puzzle Solver (BFS)</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            background: #111;
+            color: #fff;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
+            justify-content: center;
+            margin: 20px;
+        }
+
+        input {
+            width: 80px;
+            height: 80px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #00ffcc;
+            border: none;
+            cursor: pointer;
+        }
+
+        pre {
+            text-align: left;
+            background: #222;
+            padding: 10px;
+            margin: 20px auto;
+            width: 60%;
+            overflow-x: auto;
+        }
+    </style>
 </head>
 <body>
-    <h1>8 Puzzle Solver</h1>
-    <button onclick="solve()">Solve</button>
+
+    <h1>8 Puzzle Solver (BFS)</h1>
+
+    <div class="grid">
+        <input type="number" id="c0">
+        <input type="number" id="c1">
+        <input type="number" id="c2">
+        <input type="number" id="c3">
+        <input type="number" id="c4">
+        <input type="number" id="c5">
+        <input type="number" id="c6">
+        <input type="number" id="c7">
+        <input type="number" id="c8">
+    </div>
+
+    <button onclick="solve()">Solve Puzzle</button>
+
     <pre id="output"></pre>
 
     <script>
+        function getInput() {
+            let arr = [];
+            for (let i = 0; i < 9; i++) {
+                let val = document.getElementById("c" + i).value;
+                arr.push(parseInt(val));
+            }
+            return arr;
+        }
+
         async function solve() {
-            const state = [1,2,3,4,0,5,6,7,8];
+            const state = getInput();
 
             const res = await fetch('/solve', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({state})
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: state })
             });
 
             const data = await res.json();
-            document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+
+            document.getElementById("output").innerText =
+                JSON.stringify(data, null, 2);
         }
     </script>
+
 </body>
 </html>
