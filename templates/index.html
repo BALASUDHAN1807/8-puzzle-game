@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>8 Puzzle BFS</title>
+</head>
+<body>
+    <h1>8 Puzzle Solver</h1>
+    <button onclick="solve()">Solve</button>
+    <pre id="output"></pre>
+
+    <script>
+        async function solve() {
+            const state = [1,2,3,4,0,5,6,7,8];
+
+            const res = await fetch('/solve', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({state})
+            });
+
+            const data = await res.json();
+            document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
