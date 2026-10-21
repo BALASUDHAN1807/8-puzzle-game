@@ -1,99 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>8 Puzzle Solver (BFS)</title>
-    <style>
-        body {
-            font-family: Arial;
-            text-align: center;
-            background: #111;
-            color: #fff;
-        }
-
-        h1 {
-            margin-top: 20px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 80px);
-            gap: 10px;
-            justify-content: center;
-            margin: 20px;
-        }
-
-        input {
-            width: 80px;
-            height: 80px;
-            font-size: 24px;
-            text-align: center;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #00ffcc;
-            border: none;
-            cursor: pointer;
-        }
-
-        pre {
-            text-align: left;
-            background: #222;
-            padding: 10px;
-            margin: 20px auto;
-            width: 60%;
-            overflow-x: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>8 Puzzle Solver — A*, BFS &amp; Greedy</title>
+  <meta name="description" content="Play the 8-puzzle and watch A*, BFS and Greedy search solve it step by step.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2314b8a6'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>8</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <header>
+    <h1>8&nbsp;Puzzle <span>Solver</span></h1>
+    <p class="tag">Slide the tiles yourself, or let a search algorithm do it.</p>
+  </header>
 
-    <h1>8 Puzzle Solver (BFS)</h1>
+  <main>
+    <section class="board-col">
+      <div class="status" id="status" role="status" aria-live="polite">Shuffle to start.</div>
+      <div class="board" id="board" aria-label="Puzzle board"></div>
+      <div class="counter">
+        <div><span id="moveCount">0</span><small>your moves</small></div>
+        <div><span id="h">0</span><small>distance (Manhattan)</small></div>
+        <div><span id="solvable" class="ok">yes</span><small>solvable</small></div>
+      </div>
+      <div class="row">
+        <button id="shuffleBtn" class="primary">Shuffle</button>
+        <button id="resetBtn">Reset</button>
+        <button id="editBtn">Custom board</button>
+      </div>
+      <form id="editForm" class="edit hidden">
+        <label for="editInput">Enter 9 numbers, 0 = blank (row by row)</label>
+        <div class="row">
+          <input id="editInput" inputmode="numeric" autocomplete="off" placeholder="1 2 3 4 0 6 7 5 8">
+          <button type="submit" class="primary">Apply</button>
+        </div>
+        <p class="err" id="editErr"></p>
+      </form>
+      <p class="hint">Click a tile next to the blank, or use the arrow keys.</p>
+    </section>
 
-    <div class="grid">
-        <input type="number" id="c0">
-        <input type="number" id="c1">
-        <input type="number" id="c2">
-        <input type="number" id="c3">
-        <input type="number" id="c4">
-        <input type="number" id="c5">
-        <input type="number" id="c6">
-        <input type="number" id="c7">
-        <input type="number" id="c8">
-    </div>
+    <section class="panel">
+      <h2>Solve</h2>
+      <div class="algos" role="radiogroup" aria-label="Algorithm">
+        <label><input type="radio" name="algo" value="astar" checked><span><b>A*</b><small>Manhattan · optimal · fast</small></span></label>
+        <label><input type="radio" name="algo" value="bfs"><span><b>BFS</b><small>uninformed · optimal · slow</small></span></label>
+        <label><input type="radio" name="algo" value="greedy"><span><b>Greedy</b><small>heuristic only · not optimal</small></span></label>
+      </div>
+      <div class="row">
+        <button id="solveBtn" class="primary wide">Solve</button>
+        <button id="compareBtn">Compare all</button>
+      </div>
 
-    <button onclick="solve()">Solve Puzzle</button>
+      <div id="result" class="result hidden">
+        <div class="stats">
+          <div><span id="rSteps">–</span><small>moves</small></div>
+          <div><span id="rNodes">–</span><small>nodes expanded</small></div>
+          <div><span id="rTime">–</span><small>ms</small></div>
+        </div>
+        <div class="player">
+          <button id="firstBtn" aria-label="First step">⏮</button>
+          <button id="prevBtn" aria-label="Previous step">◀</button>
+          <button id="playBtn" class="primary" aria-label="Play">▶ Play</button>
+          <button id="nextBtn" aria-label="Next step">▶</button>
+          <button id="lastBtn" aria-label="Last step">⏭</button>
+        </div>
+        <div class="progress"><input type="range" id="scrub" min="0" max="0" value="0" aria-label="Step"><span id="stepLabel">0 / 0</span></div>
+        <label class="speed">Speed <input type="range" id="speed" min="50" max="1000" value="350" step="50"></label>
+        <ol class="moves" id="moveList"></ol>
+      </div>
 
-    <pre id="output"></pre>
+      <div id="compare" class="hidden">
+        <table>
+          <thead><tr><th>Algorithm</th><th>Moves</th><th>Nodes</th><th>Time</th></tr></thead>
+          <tbody id="compareBody"></tbody>
+        </table>
+      </div>
 
-    <script>
-        function getInput() {
-            let arr = [];
-            for (let i = 0; i < 9; i++) {
-                let val = document.getElementById("c" + i).value;
-                arr.push(parseInt(val));
-            }
-            return arr;
-        }
+      <details class="about">
+        <summary>How it works</summary>
+        <p>Every board is a node in a graph; sliding a tile is an edge. <b>BFS</b> explores level by level, so it always finds the shortest solution but visits many states. <b>A*</b> orders nodes by moves-so-far + Manhattan distance; because Manhattan never overestimates, A* is still optimal and expands far fewer nodes. <b>Greedy</b> uses only the heuristic — very fast, but solutions can be long.</p>
+        <p>Only half of all boards are solvable: a board can reach the goal only if its number of <em>inversions</em> is even. The solver checks this before searching.</p>
+      </details>
+    </section>
+  </main>
 
-        async function solve() {
-            const state = getInput();
+  <footer>Built by Balasudhan R · <a href="https://github.com/BALASUDHAN1807/8-puzzle-game" target="_blank" rel="noopener">Source on GitHub</a></footer>
 
-            const res = await fetch('/solve', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ state: state })
-            });
-
-            const data = await res.json();
-
-            document.getElementById("output").innerText =
-                JSON.stringify(data, null, 2);
-        }
-    </script>
-
+  <script src="/app.js"></script>
 </body>
 </html>

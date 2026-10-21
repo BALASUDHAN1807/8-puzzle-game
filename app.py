@@ -1,71 +1,59 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
-from collections import deque
 
-app = Flask(__name__)
+from solver import ALGORITHMS, PuzzleError, is_solvable, random_solvable, solve, validate
+
+# Static assets live in public/ so Vercel serves them from its CDN;
+# locally Flask serves the same folder at the site root.
+app = Flask(__name__, static_folder="public", static_url_path="")
 CORS(app)
 
-GOAL = [1, 2, 3, 4, 5, 6, 7, 8, 0]
-GOAL_KEY = tuple(GOAL)
 
-def get_neighbors(state):
-    neighbors = []
-    idx = state.index(0)
-    x, y = divmod(idx, 3)
-
-    moves = [(-1,0),(1,0),(0,-1),(0,1)]
-
-    for dx, dy in moves:
-        nx, ny = x + dx, y + dy
-        if 0 <= nx < 3 and 0 <= ny < 3:
-            new_idx = nx * 3 + ny
-            new_state = state[:]
-            new_state[idx], new_state[new_idx] = new_state[new_idx], new_state[idx]
-            neighbors.append(new_state)
-
-    return neighbors
-
-
-def bfs(start):
-    queue = deque([(start, [])])
-    visited = set()
-    visited.add(tuple(start))
-
-    while queue:
-        state, path = queue.popleft()
-
-        if tuple(state) == GOAL_KEY:
-            return path + [state]
-
-        for neighbor in get_neighbors(state):
-            key = tuple(neighbor)
-            if key not in visited:
-                visited.add(key)
-                queue.append((neighbor, path + [state]))
-
-    return None
-
-
-@app.route('/')
+@app.get("/")
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
-@app.route('/solve', methods=['POST'])
-def solve():
+@app.get("/api/health")
+def health():
+    return jsonify({"status": "ok", "algorithms": list(ALGORITHMS)})
+
+
+@app.post("/api/solve")
+@app.post("/solve")  # kept for backward compatibility with the original endpoint
+def api_solve():
+    data = request.get_json(silent=True) or {}
+    if "state" not in data:
+        return jsonify({"error": "Request body must be JSON with a 'state' array of 9 numbers."}), 400
     try:
-        data = request.json
-        start = data['state']
+        return jsonify(solve(data["state"], data.get("algorithm", "astar")))
+    except PuzzleError as e:
+        return jsonify({"error": str(e)}), 400
 
-        result = bfs(start)
 
-        if result:
-            return jsonify({"solution": result})
-        else:
-            return jsonify({"solution": "No solution"})
+@app.post("/api/check")
+def api_check():
+    data = request.get_json(silent=True) or {}
+    try:
+        state = validate(data.get("state"))
+    except PuzzleError as e:
+        return jsonify({"error": str(e)}), 400
+    return jsonify({"state": list(state), "solvable": is_solvable(state)})
 
-    except Exception as e:
-        return jsonify({"error": str(e)})
+
+@app.get("/api/random")
+def api_random():
+    moves = request.args.get("moves", type=int)
+    if moves is not None:
+        moves = max(1, min(moves, 200))
+    return jsonify({"state": random_solvable(moves)})
+
+
+@app.errorhandler(404)
+def not_found(_):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Not found"}), 404
+    return render_template("index.html"), 404
 
 
 if __name__ == "__main__":

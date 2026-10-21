@@ -1,0 +1,132 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --line: #2a313c;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #14b8a6;
+  --accent-ink: #042f2b;
+  --tile: #1f2937;
+  --tile-hi: #263244;
+  --good: #22c55e;
+  --bad: #f87171;
+  --size: min(84vw, 330px);
+  --gap: 8px;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 50% -200px, #12303a 0%, var(--bg) 60%) no-repeat var(--bg);
+  color: var(--text);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  min-height: 100vh;
+}
+header { text-align: center; padding: 28px 16px 8px; }
+h1 { margin: 0; font-size: clamp(28px, 6vw, 42px); letter-spacing: -0.02em; }
+h1 span { color: var(--accent); }
+.tag { color: var(--muted); margin: 6px 0 0; }
+h2 { margin: 0 0 12px; font-size: 18px; }
+
+main {
+  display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start;
+  max-width: 980px; margin: 0 auto; padding: 20px 16px 40px;
+}
+.board-col { display: flex; flex-direction: column; align-items: center; gap: 14px; width: var(--size); }
+.panel {
+  flex: 1 1 320px; max-width: 460px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+}
+
+.status { min-height: 24px; color: var(--muted); text-align: center; }
+.status.win { color: var(--good); font-weight: 700; }
+.status.err { color: var(--bad); }
+
+.board {
+  position: relative; width: var(--size); height: var(--size);
+  background: #0a0e14; border: 1px solid var(--line); border-radius: 16px; padding: var(--gap);
+}
+.tile {
+  position: absolute;
+  width: calc((var(--size) - 4 * var(--gap)) / 3); height: calc((var(--size) - 4 * var(--gap)) / 3);
+  display: grid; place-items: center;
+  font-family: "JetBrains Mono", monospace; font-size: calc(var(--size) / 8);
+  background: linear-gradient(160deg, var(--tile-hi), var(--tile));
+  border: 1px solid var(--line); border-radius: 12px; color: var(--text);
+  cursor: pointer; user-select: none;
+  transition: transform 160ms ease, background 200ms, border-color 200ms;
+}
+.tile.home { border-color: rgba(20, 184, 166, 0.55); color: #99f6e4; }
+.tile.movable:hover { background: linear-gradient(160deg, #2f3d52, #243042); }
+.tile.locked { cursor: default; }
+.board.solved .tile { border-color: var(--good); color: #bbf7d0; }
+
+.counter, .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; text-align: center; }
+.counter span, .stats span { display: block; font-family: "JetBrains Mono", monospace; font-size: 20px; }
+small { color: var(--muted); font-size: 12px; }
+.ok { color: var(--good); } .no { color: var(--bad); }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; }
+button {
+  font: inherit; color: var(--text); background: var(--tile); border: 1px solid var(--line);
+  padding: 9px 14px; border-radius: 10px; cursor: pointer; transition: background 150ms, transform 80ms;
+}
+button:hover { background: var(--tile-hi); }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 700; }
+button.primary:hover { background: #2dd4bf; }
+button.wide { flex: 1; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.edit { width: 100%; }
+.edit label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+.edit input {
+  flex: 1; min-width: 0; font: 500 15px "JetBrains Mono", monospace; color: var(--text);
+  background: #0a0e14; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px;
+}
+.err { color: var(--bad); font-size: 13px; min-height: 1em; margin: 6px 0 0; }
+.hint { color: var(--muted); font-size: 13px; margin: 0; text-align: center; }
+.hidden { display: none !important; }
+
+.algos { display: grid; gap: 8px; margin-bottom: 12px; }
+.algos label { display: block; cursor: pointer; }
+.algos input { position: absolute; opacity: 0; }
+.algos span {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #0f141b;
+}
+.algos input:checked + span { border-color: var(--accent); background: rgba(20, 184, 166, 0.08); }
+.algos input:focus-visible + span { outline: 2px solid var(--accent); }
+
+.result { margin-top: 18px; display: grid; gap: 12px; }
+.player { display: flex; gap: 6px; justify-content: center; }
+.player button { padding: 8px 12px; }
+.progress { display: flex; align-items: center; gap: 10px; }
+.progress input { flex: 1; accent-color: var(--accent); }
+#stepLabel { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--muted); min-width: 64px; text-align: right; }
+.speed { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+.speed input { flex: 1; accent-color: var(--accent); direction: rtl; }
+.moves {
+  display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0;
+  max-height: 140px; overflow-y: auto;
+}
+.moves li {
+  font: 500 12px "JetBrains Mono", monospace; padding: 4px 8px; border-radius: 6px;
+  background: #0f141b; border: 1px solid var(--line); color: var(--muted); cursor: pointer;
+}
+.moves li.done { color: var(--text); }
+.moves li.current { border-color: var(--accent); color: #99f6e4; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 14px; }
+th, td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 500; }
+td.best { color: var(--good); }
+
+.about { margin-top: 18px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.about summary { cursor: pointer; color: var(--text); }
+footer { text-align: center; color: var(--muted); font-size: 13px; padding: 0 16px 28px; }
+footer a { color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
